@@ -1,3 +1,4 @@
+import pokemonModel from "../models/pokemon.model.js"
 import PokemonModel from "../models/pokemon.model.js"
 import fetchPokemon from "../Services/fetchPokemon.js"
 
@@ -9,6 +10,7 @@ const hola = async (req,res)=>{
 const createPokemon = async (req,res)=>{
     try {
         const toCreate = await fetchPokemon(req.body.pokemon_id)
+        console.log(toCreate)
         if(toCreate == null){
             return res.status(400).send("pokemon_id no valido")
         }
@@ -44,21 +46,70 @@ const getPokemonForPokedexStatus = async (req,res)=>{
         if(pokemon == null){
             return res.status(404).send("Pokemon no existe")
         }
-        const data = await PokemonModel.fin({"pokemon_id":pokemon_id})
+        const data = await pokemonModel.find({"pokemon_id":pokemon_id})
         if (data.length == 0){
             const pokemonStatus = {
                 name:pokemon.name,
                 pokemon_id:pokemon_id,
-                view:false,
+                view:true,
                 catch:false,
-                id_team:false,
+                in_team:false,
                 image: pokemon.sprites.front_default
             }
+            return res.status(200).json(pokemonStatus)
         }
-        return res.status(200).json(pokemonStatus) 
+        let pokemon_view = data.filter(pokemon=>pokemon.catch == false )
+        if(pokemon_view.length != 0){
+             {
+            const pokemonStatus = {
+                name:pokemon.name,
+                pokemon_id:pokemon_id,
+                view:true,
+                catch:false,
+                in_team:false,
+                image: pokemon.sprites.front_default
+            }
+            return res.status(200).json(pokemonStatus)
+            }
+        }
+        let pokemon_in_team = data.filter(pokemon=>pokemon.in_team == true )
+        if(pokemon_in_team.length > 0 ){
+            const pokemonStatus = {
+                name:pokemon.name,
+                pokemon_id:pokemon_id,
+                view:true,
+                catch:true,
+                in_team:true,
+                image: pokemon.sprites.front_default
+            }
+            return res.status(200).json(pokemonStatus)
+        }
+         const pokemonStatus = {
+                name:pokemon.name,
+                pokemon_id:pokemon_id,
+                view:true,
+                catch:true,
+                in_team:false,
+                image: pokemon.sprites.front_default
+            }
+            return res.status(200).json(pokemonStatus)
     } catch (error) {
         return error
     }
 
 }
-export {hola,createPokemon,getPokemons, getPokemonForPokedexStatus}
+const catchPokemon = async (req,res)=>{
+    try {
+        const {id} = req.params
+        
+        const pokemonToChange = await  PokemonModel.findByIdAndUpdate(id,{catch:true},{new:true})
+        if(pokemonToChange== null){
+            res.status(404).send("Pokemon no encontrado en DB")
+        }
+        return res.status(200).json(pokemonToChange)  
+    }
+         catch (error) {
+        
+    }
+}
+export {hola,createPokemon,getPokemons, getPokemonForPokedexStatus, catchPokemon}
